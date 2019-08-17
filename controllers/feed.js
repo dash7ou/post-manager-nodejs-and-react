@@ -168,3 +168,32 @@ const deleteImage = filePath => {
   filePath = path.join(__dirname, "..", filePath);
   fs.unlink(filePath, err => console.log(err));
 };
+
+exports.deletePost = async (req, res, next) => {
+  try {
+    const postId = req.params.postId;
+
+    if (!postId) {
+      const error = new Error("No product with that id.");
+      error.statusCode = 404;
+      throw error;
+    }
+    const post = await Post.findById(postId);
+    if (!post) {
+      const error = new Error("No product with that id.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    await Post.deleteOne({ _id: postId });
+    deleteImage(post.imageUrl);
+    res.status(200).send({
+      message: "Delete post done"
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
