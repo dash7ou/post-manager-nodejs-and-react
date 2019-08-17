@@ -4,16 +4,25 @@ const fs = require("fs");
 const path = require("path");
 
 exports.getPosts = async (req, res, next) => {
-  const posts = await Post.find();
   try {
+    const currentPage = req.query.page || 1;
+    const perPage = 2;
+
+    const totalItems = await Post.find().countDocuments();
+
+    const posts = await Post.find()
+      .skip((currentPage - 1) * perPage)
+      .limit(perPage);
+
     if (!posts) {
       const error = new Error("There are no post");
       error.statusCode = 404;
       throw error;
     }
-    res.status(200).json({
+    res.status(200).send({
       message: "successful in fetching data",
-      posts: posts
+      posts: posts,
+      totalItems: totalItems
     });
   } catch (err) {
     if (!err.statusCode) {
