@@ -22,4 +22,18 @@ router.post(
 );
 
 router.get("/post/:postId", feedController.getAny);
+
+router.put(
+  "/post/:postId",
+  [
+    body("title")
+      .trim()
+      .isLength({ min: 5, max: 50 }),
+    body("content")
+      .trim()
+      .isLength({ min: 5, max: 200 })
+  ],
+  feedController.updatePost
+);
+
 module.exports = router;

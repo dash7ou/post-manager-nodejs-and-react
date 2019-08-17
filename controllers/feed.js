@@ -1,5 +1,7 @@
 const { validationResult } = require("express-validator");
 const { Post } = require("../models/post");
+const fs = require("fs");
+const path = require("path");
 
 exports.getPosts = async (req, res, next) => {
   const posts = await Post.find();
@@ -73,7 +75,7 @@ exports.getAny = async (req, res, next) => {
     const id = req.params.postId;
 
     if (!id) {
-      const error = new Error("Id you enter not valid.");
+      const error = new Error("Id you enter it not valid.");
       error.statusCode = 400;
       throw error;
     }
@@ -93,4 +95,76 @@ exports.getAny = async (req, res, next) => {
     }
     next(err);
   }
+};
+
+exports.updatePost = async (req, res, next) => {
+  try {
+    const allowUpdate = ["title", "image", "content"];
+    const updates = Object.keys(req.body);
+
+    const isValidate = updates.every(update => allowUpdate.includes(update));
+
+    if (isValidate === false) {
+      const error = new Error("invalidate operation!");
+      error.statusCode = 404;
+      throw error;
+    }
+    const title = req.body.title;
+
+    const content = req.body.content;
+
+    const postId = req.params.postId;
+    if (!postId) {
+      const error = new Error("No product with that id.");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const error = new Error("There are problem in valid input");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    let imageUrl = req.body.image;
+
+    const updatePost = await Post.findById(postId);
+    if (!updatePost) {
+      const error = new Error("No product with that id.");
+      error.statusCode = 404;
+      throw error;
+    }
+    console.log(req.file.path);
+
+    if (req.file) {
+      deleteImage(updatePost.imageUrl);
+      imageUrl = req.file.path;
+    }
+    if (!imageUrl) {
+      const error = new Error("No attach file (image)");
+      error.statusCode = 404;
+      throw error;
+    }
+    updatePost.title = title;
+    updatePost.content = content;
+    updatePost.imageUrl = imageUrl;
+
+    await updatePost.save();
+
+    res.status(200).send({
+      message: "update done.",
+      post: updatePost
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};
+
+const deleteImage = filePath => {
+  filePath = path.join(__dirname, "..", filePath);
+  fs.unlink(filePath, err => console.log(err));
 };
