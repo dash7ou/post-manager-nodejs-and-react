@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const path = require("path");
 const multer = require("multer");
 const feedRoutes = require("./routes/feed");
+const authRoutes = require("./routes/auth");
 
 const app = express();
 
@@ -48,19 +49,25 @@ app.use((error, req, res, next) => {
   console.log(error);
   const statusCode = error.statusCode || 500;
   const message = error.message;
+  const data = error.data;
   res.status(statusCode).json({
-    message: message
+    message: message,
+    data: data
   });
 });
 
 //mongodb+srv://dashzou:<password>@db-shop-sf22n.mongodb.net/test?retryWrites=true&w=majority
 //mongodb://localhost:27018/PostManger
 mongoose
-  .connect("mongodb://localhost:27018/PostManger", { useNewUrlParser: true })
+  .connect("mongodb://localhost:27018/PostManger", {
+    useNewUrlParser: true,
+    useCreateIndex: true
+  })
   .then(_ => console.log("Connect to mongodb done."))
   .catch(err => console.log(err));
 
 app.use("/feed", feedRoutes);
 app.use("/images", express.static(path.join(__dirname, "images")));
+app.use("/auth", authRoutes);
 
 app.listen(8080);
