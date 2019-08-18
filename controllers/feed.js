@@ -3,6 +3,7 @@ const { Post } = require("../models/post");
 const fs = require("fs");
 const path = require("path");
 const { User } = require("../models/user");
+const io = require("../sockerio");
 
 exports.getPosts = async (req, res, next) => {
   try {
@@ -12,6 +13,8 @@ exports.getPosts = async (req, res, next) => {
     const totalItems = await Post.find().countDocuments();
 
     const posts = await Post.find()
+      .populate("creator")
+      .sort({ createAt: -1 })
       .skip((currentPage - 1) * perPage)
       .limit(perPage);
 
@@ -69,7 +72,10 @@ exports.createPost = async (req, res, next) => {
 
     user.posts.push(post);
     await user.save();
-
+    io.getIo().emit("posts", {
+      action: "created",
+      post: { ...post._doc, creator: { _id: req.userId, name: user.name } }
+    });
     res.status(201).json({
       message: "Post created successfully!",
       post: post,
@@ -142,13 +148,13 @@ exports.updatePost = async (req, res, next) => {
 
     let imageUrl = req.body.image;
 
-    const updatePost = await Post.findById(postId);
+    const updatePost = await Post.findById(postId).populate("creator");
     if (!updatePost) {
       const error = new Error("No product with that id.");
       error.statusCode = 404;
       throw error;
     }
-    if (updatePost.creator.toString() !== req.userId.toString()) {
+    if (updatePost.creator._id.toString() !== req.userId.toString()) {
       const error = new Error("Not authorized!");
       error.statusCode = 403;
       throw error;
@@ -167,7 +173,8 @@ exports.updatePost = async (req, res, next) => {
     updatePost.content = content;
     updatePost.imageUrl = imageUrl;
 
-    await updatePost.save();
+    const result = await updatePost.save();
+    io.getIo().emit("posts", { action: "updated", post: result });
 
     res.status(200).send({
       message: "update done.",
@@ -215,7 +222,7 @@ exports.deletePost = async (req, res, next) => {
     const indexDeleted = user.posts.indexOf(postId);
     user.posts.splice(indexDeleted, 1);
     await user.save();
-
+    io.getIo().emit("posts", { action: "deleted", post: postId });
     res.status(200).send({
       message: "Delete post done"
     });

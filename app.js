@@ -63,11 +63,22 @@ mongoose
     useNewUrlParser: true,
     useCreateIndex: true
   })
-  .then(_ => console.log("Connect to mongodb done."))
+  .then(result => {
+    console.log("Connect to mongodb done.");
+    const server = app.listen(8080);
+    const io = require("./sockerio").init(server);
+    io.on("connection", socket => {
+      console.log("clint connect");
+    });
+  })
   .catch(err => console.log(err));
 
 app.use("/feed", feedRoutes);
 app.use("/images", express.static(path.join(__dirname, "images")));
 app.use("/auth", authRoutes);
 
-app.listen(8080);
+// const server = app.listen(8080);
+// const io = require("socket.io")(server);
+// io.on("connection", socket => {
+//   console.log("clint connect");
+// });
