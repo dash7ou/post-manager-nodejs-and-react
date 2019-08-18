@@ -2,6 +2,7 @@ const { validationResult } = require("express-validator");
 const { Post } = require("../models/post");
 const fs = require("fs");
 const path = require("path");
+const { User } = require("../models/user");
 
 exports.getPosts = async (req, res, next) => {
   try {
@@ -55,21 +56,24 @@ exports.createPost = async (req, res, next) => {
       error.statusCode = 422;
       throw error;
     }
+
     const post = await new Post({
       title: title,
       content: content,
-      creator: {
-        _id: "1",
-        name: "dash"
-      },
+      creator: req.userId,
       imageUrl: imageUrl,
       createAt: Date.now()
     });
     await post.save();
+    const user = await User.findById(req.userId);
+
+    user.posts.push(post);
+    await user.save();
 
     res.status(201).json({
       message: "Post created successfully!",
-      post: post
+      post: post,
+      creator: { _id: user._id, name: user.name }
     });
   } catch (err) {
     if (!err.statusCode) {
@@ -144,7 +148,11 @@ exports.updatePost = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    console.log(req.file.path);
+    if (updatePost.creator.toString() !== req.userId.toString()) {
+      const error = new Error("Not authorized!");
+      error.statusCode = 403;
+      throw error;
+    }
 
     if (req.file) {
       deleteImage(updatePost.imageUrl);
@@ -191,6 +199,12 @@ exports.deletePost = async (req, res, next) => {
     if (!post) {
       const error = new Error("No product with that id.");
       error.statusCode = 404;
+      throw error;
+    }
+
+    if (post.creator.toString() !== req.userId.toString()) {
+      const error = new Error("Not authorized!");
+      error.statusCode = 403;
       throw error;
     }
 
