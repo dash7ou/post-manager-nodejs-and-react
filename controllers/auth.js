@@ -34,3 +34,24 @@ exports.singup = async (req, res, next) => {
     next(err);
   }
 };
+
+exports.login = async (req, res, next) => {
+  try {
+    const email = req.body.email;
+    const password = req.body.password;
+
+    const user = await User.findUserToSignin(email, password);
+
+    const token = user.generateJsonToken();
+
+    res.status(200).send({
+      token: token,
+      userId: user._id.toString()
+    });
+  } catch (err) {
+    if (!err.statusCode) {
+      err.statusCode = 500;
+    }
+    next(err);
+  }
+};

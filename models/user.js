@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const hashit = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 const userSchema = new mongoose.Schema(
   {
@@ -39,6 +40,31 @@ userSchema.pre("save", async function(next) {
   }
   next();
 });
+
+userSchema.statics.findUserToSignin = async (email, password) => {
+  const user = await User.findOne({ email: email });
+  if (!user) {
+    throw new Error("Check you email and password");
+  }
+  isMatch = await hashit.compare(password, user.password);
+  if (!isMatch) {
+    throw new Error("Check you email and password");
+  }
+
+  return user;
+};
+
+userSchema.methods.generateJsonToken = function() {
+  const user = this;
+  const token = jwt.sign(
+    { _id: user._id.toString() },
+    "thisisnononenowhhahahhahahhaha",
+    {
+      expiresIn: "2h"
+    }
+  );
+  return token;
+};
 
 const User = mongoose.model("User", userSchema);
 
