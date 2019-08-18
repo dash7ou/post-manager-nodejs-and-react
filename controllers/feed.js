@@ -210,6 +210,12 @@ exports.deletePost = async (req, res, next) => {
 
     await Post.deleteOne({ _id: postId });
     deleteImage(post.imageUrl);
+    const user = await User.findById(req.userId);
+
+    const indexDeleted = user.posts.indexOf(postId);
+    user.posts.splice(indexDeleted, 1);
+    await user.save();
+
     res.status(200).send({
       message: "Delete post done"
     });
