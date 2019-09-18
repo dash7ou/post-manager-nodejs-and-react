@@ -31,13 +31,12 @@ to set up the dev environment run server in your trminal in path project file ru
 npm run dev
 ```
 
-now you can see our project in your browser enter: "localhost:3000" or [click here](http://localhost:3000/)
+now you can see our project in your browser enter: "localhost:8080" or [click here](http://localhost:8080/)
 
 ## Built With
 
 * [Nodejs](https://nodejs.org/en/): is a JavaScript runtime built on Chrome's V8 JavaScript engine.
 * [Express](https://expressjs.com/): minimal and flexible Node.js web application framework.
-* [Express-session](https://www.npmjs.com/package/express-session): Create a session middleware with the given options.
 * [Mongoose](https://mongoosejs.com/):  writing MongoDB validation, casting and business logic boilerplate is a drag.
 * [Multer](https://www.npmjs.com/package/multer): used for uploading files
 * [socket.io](https://socket.io/): use to create realTime app
